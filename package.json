@@ -1,0 +1,19 @@
+{
+  "name": "stock-trend-visualiser",
+  "version": "1.0.0",
+  "description": "Premium full-stack stock analytics dashboard with neon cyber-finance dark theme.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "autoprefixer": "^10.5.0",
+    "concurrently": "^9.2.1",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^4.3.0"
+  }
+}
