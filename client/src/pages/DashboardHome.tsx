@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
+import type { CSSProperties } from 'react'
 import {
   FiArrowDownRight,
   FiArrowUpRight,
@@ -64,6 +65,9 @@ export default function DashboardHome() {
     .map((sector) => ({ ...sector, change: sector.change / sector.count }))
     .sort((a, b) => b.change - a.change)
     .slice(0, 5)
+  const tickerTape = [...indexes.map((item) => ({ ...item, companyName: item.name })), ...stocks].slice(0, 10)
+  const fearGreed = Math.min(92, Math.max(12, Math.round(48 + breadth / 3 - averageMove * 4)))
+  const forecastTone = breadth > 58 ? 'Constructive' : breadth > 42 ? 'Selective' : 'Defensive'
   const deskBriefs = [
     {
       icon: FiZap,
@@ -85,10 +89,33 @@ export default function DashboardHome() {
   return (
     <div className="page-stack">
       <section className="dashboard-hero glass-panel">
-        <div>
+        <div className="hero-copy-block">
           <span className="eyebrow">Market overview</span>
-          <h1>Night desk is live</h1>
-          <p>Monitor indices, trending equities, indicators, news, and portfolio signals in one terminal.</p>
+          <h1>
+            Market command is <span>online</span>
+          </h1>
+          <p>Monitor indices, trending equities, indicators, news, and portfolio signals in one analyst-grade terminal.</p>
+          <div className="hero-signal-grid">
+            <div>
+              <small>Today&apos;s Market Sentiment</small>
+              <strong>{breadth >= 55 ? 'Risk-on' : breadth >= 42 ? 'Balanced' : 'Risk-off'}</strong>
+            </div>
+            <div>
+              <small>Fear & Greed Index</small>
+              <strong>{fearGreed}/100</strong>
+            </div>
+            <div>
+              <small>AI Market Forecast</small>
+              <strong>{forecastTone}</strong>
+            </div>
+          </div>
+        </div>
+        <div className="hero-market-visual" aria-hidden="true">
+          <div className="particle-field">
+            {Array.from({ length: 18 }).map((_, index) => (
+              <span key={index} style={{ '--i': index } as CSSProperties} />
+            ))}
+          </div>
         </div>
         <div className="hero-tools">
           <button className="icon-text-button" type="button">
@@ -102,6 +129,19 @@ export default function DashboardHome() {
           <button className="icon-button" type="button" aria-label="Toggle theme" onClick={toggleTheme}>
             <FiMoon />
           </button>
+        </div>
+        <div className="ticker-strip">
+          <motion.div animate={{ x: ['0%', '-50%'] }} transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}>
+            {[...tickerTape, ...tickerTape].map((item, index) => (
+              <span key={`${item.ticker}-${index}`}>
+                <strong>{item.ticker}</strong>
+                <em className={item.changePercent >= 0 ? 'profit' : 'loss'}>
+                  {item.changePercent >= 0 ? '+' : ''}
+                  {item.changePercent}%
+                </em>
+              </span>
+            ))}
+          </motion.div>
         </div>
       </section>
 
@@ -149,13 +189,14 @@ export default function DashboardHome() {
           const positive = index.changePercent >= 0
           const Arrow = positive ? FiArrowUpRight : FiArrowDownRight
           return (
-            <motion.article
-              className="metric-card glass-panel"
+          <motion.article
+            className="metric-card glass-panel"
               key={index.ticker}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: itemIndex * 0.06 }}
             >
+              <span className="metric-topline" />
               <span>{index.name}</span>
               <strong>{index.price.toLocaleString()}</strong>
               <em className={positive ? 'profit' : 'loss'}>
@@ -219,6 +260,7 @@ export default function DashboardHome() {
             transition={{ delay: index * 0.05 }}
             whileHover={{ y: -5, scale: 1.01 }}
           >
+            <span className="animated-border" />
             <Link to={`/dashboard/stocks/${stock.ticker}`} className="stock-card-link">
               <div className="stock-card-top">
                 <span className="stock-logo">{stock.logo}</span>
@@ -230,6 +272,10 @@ export default function DashboardHome() {
                   {stock.changePercent >= 0 ? '+' : ''}
                   {stock.changePercent}%
                 </em>
+              </div>
+              <div className="stock-meta-row">
+                <span>Vol {stock.history.at(-1)?.volume.toLocaleString()}</span>
+                <span>{stock.sector}</span>
               </div>
               <StockChart data={stock.history} compact />
             </Link>

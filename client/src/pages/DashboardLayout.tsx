@@ -1,12 +1,15 @@
 import { Link, Outlet, NavLink } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   FiActivity,
   FiBarChart2,
   FiBell,
+  FiChevronDown,
+  FiClock,
   FiGrid,
   FiLogOut,
+  FiMenu,
   FiRepeat,
   FiSettings,
   FiStar,
@@ -28,27 +31,70 @@ const navItems = [
 export default function DashboardLayout() {
   const { user, logout } = useAuth()
   const [showNotifications, setShowNotifications] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [clock, setClock] = useState(() => new Date())
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(new Date()), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  const nyParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    weekday: 'short',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false,
+  }).formatToParts(clock)
+  const weekday = nyParts.find((part) => part.type === 'weekday')?.value || ''
+  const hour = Number(nyParts.find((part) => part.type === 'hour')?.value || 0)
+  const minute = Number(nyParts.find((part) => part.type === 'minute')?.value || 0)
+  const minutes = hour * 60 + minute
+  const isWeekday = !['Sat', 'Sun'].includes(weekday)
+  const marketOpen = isWeekday && minutes >= 570 && minutes < 960
+  const renderNav = () => (
+    <nav>
+      {navItems.map((item) => {
+        const Icon = item.icon
+        return (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className="nav-item"
+            onClick={() => setMobileNavOpen(false)}
+          >
+            <Icon />
+            {item.label}
+          </NavLink>
+        )
+      })}
+    </nav>
+  )
 
   return (
     <div className="dashboard-shell">
       <aside className="sidebar glass-panel">
         <div className="brand-mark">
-          <span>SS</span>
+          <motion.span
+            animate={{ rotate: [0, 4, -4, 0], scale: [1, 1.04, 1] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            SS
+          </motion.span>
           <div>
             <strong>StockSphere</strong>
+            <small>Quant command center</small>
           </div>
         </div>
-        <nav>
-          {navItems.map((item) => {
-            const Icon = item.icon
-            return (
-              <NavLink key={item.to} to={item.to} end={item.end} className="nav-item">
-                <Icon />
-                {item.label}
-              </NavLink>
-            )
-          })}
-        </nav>
+        <div className={`market-status ${marketOpen ? 'open' : 'closed'}`}>
+          <span />
+          <div>
+            <strong>Market {marketOpen ? 'Open' : 'Closed'}</strong>
+            <small>NYSE clock</small>
+          </div>
+        </div>
+        {renderNav()}
         <button className="logout-button" type="button" onClick={logout}>
           <FiLogOut />
           Logout
@@ -57,8 +103,20 @@ export default function DashboardLayout() {
 
       <main className="dashboard-main">
         <header className="topbar glass-panel">
+          <button
+            className="icon-button mobile-menu-button"
+            type="button"
+            aria-label="Open navigation"
+            onClick={() => setMobileNavOpen((current) => !current)}
+          >
+            <FiMenu />
+          </button>
           <StockSearch compact />
           <div className="topbar-actions">
+            <div className="live-clock">
+              <FiClock />
+              {clock.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </div>
             <button
               className="icon-button notification-button"
               type="button"
@@ -69,7 +127,8 @@ export default function DashboardLayout() {
               <span />
             </button>
             <Link className="avatar profile-avatar" to="/dashboard/profile" aria-label="Open profile">
-              {user?.username?.slice(0, 1).toUpperCase() || 'U'}
+              <span>{user?.username?.slice(0, 1).toUpperCase() || 'U'}</span>
+              <FiChevronDown />
             </Link>
             <AnimatePresence>
               {showNotifications && (
@@ -116,8 +175,30 @@ export default function DashboardLayout() {
             </AnimatePresence>
           </div>
         </header>
+        <AnimatePresence>
+          {mobileNavOpen && (
+            <motion.div
+              className="mobile-nav glass-panel"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              {renderNav()}
+            </motion.div>
+          )}
+        </AnimatePresence>
         <Outlet />
       </main>
+      <nav className="bottom-nav glass-panel">
+        {navItems.slice(0, 5).map((item) => {
+          const Icon = item.icon
+          return (
+            <NavLink key={item.to} to={item.to} end={item.end} aria-label={item.label}>
+              <Icon />
+            </NavLink>
+          )
+        })}
+      </nav>
     </div>
   )
 }
